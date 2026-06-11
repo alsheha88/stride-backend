@@ -342,4 +342,17 @@ router.get("/me", authMiddleware, async (req, res) => {
 
 	res.status(200).json({ data: { user } });
 });
+router.delete("/me", authMiddleware, async (req, res) => {
+	await prisma.user.delete({
+		where: { id: req.user!.id },
+	});
+
+	res.clearCookie("refreshToken", {
+		httpOnly: true,
+		secure: process.env.NODE_ENV === "production",
+		sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+	});
+
+	res.status(200).json({ message: "Account deleted" });
+});
 export default router;
