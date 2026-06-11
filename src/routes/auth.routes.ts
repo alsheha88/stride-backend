@@ -244,7 +244,7 @@ router.post("/forgot-password", async (req, res) => {
 		);
 	const user = await prisma.user.findFirst({
 		where: {
-			email: validateRequest.data.email,
+			email: validateRequest.data.email.toLowerCase(),
 		},
 	});
 	if (!user)
@@ -267,7 +267,7 @@ router.post("/forgot-password", async (req, res) => {
 	const resetUrl = `${process.env.APP_URL}/reset-password?token=${rawToken}`;
 
 	await sendEmail({
-		to: validateRequest.data.email,
+		to: validateRequest.data.email.toLowerCase(),
 		subject: "Reset password",
 		html: `<p>You requested a password reset for your Stride account.</p>
 				<p><a href="${resetUrl}">Reset your password</a></p>
