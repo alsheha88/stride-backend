@@ -35,7 +35,7 @@ router.post("/signup", async (req, res) => {
 	const { name, email, password } = validateRequest.data;
 	const duplicateUser = await prisma.user.findUnique({
 		where: {
-			email: email,
+			email: email.toLowerCase(),
 		},
 	});
 	if (duplicateUser) {
@@ -90,7 +90,7 @@ router.post("/login", async (req, res) => {
 	const { email, password } = validateRequest.data;
 	const foundUser = await prisma.user.findUnique({
 		where: {
-			email: email,
+			email: email.toLowerCase(),
 		},
 	});
 	if (!foundUser) {
