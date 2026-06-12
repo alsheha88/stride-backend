@@ -21,10 +21,18 @@ import {
 } from "../../utility.js";
 import { sendEmail } from "../lib/email.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
+import { createAuthLimiter } from "../middleware/rateLimiterMiddleware.js";
 
 const router = express.Router();
 
-router.post("/signup", async (req, res) => {
+const loginLimiter = createAuthLimiter(5);
+const signupLimiter = createAuthLimiter(3);
+const verifyEmailLimiter = createAuthLimiter(10);
+const resetPasswordLimiter = createAuthLimiter(5);
+const forgotPasswordLimiter = createAuthLimiter(3);
+
+
+router.post("/signup", signupLimiter ,async (req, res) => {
 	const validateRequest = signUpSchema.safeParse(req.body); // safeParse used so that error is handled through the error handling middleware
 	if (!validateRequest.success) {
 		throw new ValidationError(
@@ -47,7 +55,7 @@ router.post("/signup", async (req, res) => {
 		data: {
 			name: name,
 			passwordHash: hashedPassword,
-			email: email,
+			email: email.toLocaleLowerCase(),
 		},
 	});
 	const rawToken = generateRawToken();
@@ -79,7 +87,7 @@ router.post("/signup", async (req, res) => {
 	});
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", loginLimiter ,async (req, res) => {
 	const validateRequest = loginSchema.safeParse(req.body); // safeParse used so that error is handled through the error handling middleware
 	if (!validateRequest.success) {
 		throw new ValidationError(
@@ -188,7 +196,7 @@ router.post("/logout", async (req, res) => {
 	res.status(200).json({ message: "Logged out successfully" });
 });
 
-router.post("/verify-email", async (req, res) => {
+router.post("/verify-email",verifyEmailLimiter ,async (req, res) => {
 	const validateRequest = verifyEmailSchema.safeParse(req.body);
 
 	if (!validateRequest.success)
@@ -234,7 +242,7 @@ router.post("/verify-email", async (req, res) => {
 	res.status(200).json({ message: "Email is verified successfully" });
 });
 
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", forgotPasswordLimiter ,async (req, res) => {
 	const validateRequest = forgotPasswordSchema.safeParse(req.body);
 
 	if (!validateRequest.success)
@@ -280,7 +288,7 @@ router.post("/forgot-password", async (req, res) => {
 	});
 });
 
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", resetPasswordLimiter ,async (req, res) => {
 	const validateRequest = resetPasswordSchema.safeParse(req.body);
 
 	if (!validateRequest.success)
