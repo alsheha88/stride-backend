@@ -1,6 +1,7 @@
 import "dotenv/config";
+import {env} from "./src/lib/env.js"
 import * as Sentry from "@sentry/node";
 
 Sentry.init({
-	dsn: process.env.SENTRY_DSN,
+	dsn: env.SENTRY_DSN,
 });

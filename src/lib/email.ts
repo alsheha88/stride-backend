@@ -1,4 +1,6 @@
 import { Resend } from "resend";
+import { logger } from "./logger.js";
+import { env } from "./env.js";
 
 type SendEmailParams = {
   to: string;
@@ -9,10 +11,10 @@ type SendEmailParams = {
 let resend: Resend | undefined;
 
 export const setupEmail = async () => {
-  if (!process.env.RESEND_API_KEY) {
+  if (!env.RESEND_API_KEY) {
     throw new Error("RESEND_API_KEY is not set");
   }
-  resend = new Resend(process.env.RESEND_API_KEY);
+  resend = new Resend(env.RESEND_API_KEY);
 };
 
 export const sendEmail = async ({ to, subject, html }: SendEmailParams) => {
@@ -21,7 +23,7 @@ export const sendEmail = async ({ to, subject, html }: SendEmailParams) => {
   }
 
   const result = await resend.emails.send({
-    from: process.env.EMAIL_FROM || "Stride <noreply@stridedev.dev>",
+    from: env.EMAIL_FROM,
     to,
     subject,
     html,
@@ -31,6 +33,6 @@ export const sendEmail = async ({ to, subject, html }: SendEmailParams) => {
     throw new Error(`Failed to send email: ${result.error.message}`);
   }
 
-  console.log("Email sent:", result.data?.id);
+  logger.info( {emailId: result.data?.id} ,"Email sent:");
   return result.data?.id;
 };

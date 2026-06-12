@@ -22,6 +22,7 @@ import {
 import { sendEmail } from "../lib/email.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { createAuthLimiter } from "../middleware/rateLimiterMiddleware.js";
+import { env } from "../lib/env.js";
 
 const router = express.Router();
 
@@ -55,7 +56,7 @@ router.post("/signup", signupLimiter ,async (req, res) => {
 		data: {
 			name: name,
 			passwordHash: hashedPassword,
-			email: email.toLocaleLowerCase(),
+			email: email.toLowerCase(),
 		},
 	});
 	const rawToken = generateRawToken();
@@ -67,7 +68,7 @@ router.post("/signup", signupLimiter ,async (req, res) => {
 			expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
 		},
 	});
-	const verifyUrl = `${process.env.APP_URL}/verify-email?token=${rawToken}`;
+	const verifyUrl = `${env.APP_URL}/verify-email?token=${rawToken}`;
 
 	await sendEmail({
 		to: email,
@@ -124,8 +125,8 @@ router.post("/login", loginLimiter ,async (req, res) => {
 
 	res.cookie("refreshToken", rawToken, {
 		httpOnly: true,
-		secure: process.env.NODE_ENV === "production",
-		sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+		secure: env.NODE_ENV === "production",
+		sameSite: env.NODE_ENV === "production" ? "none" : "strict",
 		maxAge: 30 * 24 * 60 * 60 * 1000,
 	});
 
@@ -189,8 +190,8 @@ router.post("/logout", async (req, res) => {
 
 	res.clearCookie("refreshToken", {
 		httpOnly: true,
-		secure: process.env.NODE_ENV === "production",
-		sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+		secure: env.NODE_ENV === "production",
+		sameSite: env.NODE_ENV === "production" ? "none" : "strict",
 	});
 
 	res.status(200).json({ message: "Logged out successfully" });
@@ -272,7 +273,7 @@ router.post("/forgot-password", forgotPasswordLimiter ,async (req, res) => {
 		},
 	});
 
-	const resetUrl = `${process.env.APP_URL}/reset-password?token=${rawToken}`;
+	const resetUrl = `${env.APP_URL}/reset-password?token=${rawToken}`;
 
 	await sendEmail({
 		to: validateRequest.data.email.toLowerCase(),
@@ -319,6 +320,7 @@ router.post("/reset-password", resetPasswordLimiter ,async (req, res) => {
 			},
 			data: {
 				passwordHash: newPassword,
+				
 			},
 		});
 
@@ -328,8 +330,19 @@ router.post("/reset-password", resetPasswordLimiter ,async (req, res) => {
 			},
 			data: {
 				usedAt: new Date(),
+				
 			},
 		});
+
+		await tx.session.updateMany({
+			where: {
+				userId: existingToken.userId,
+				revokedAt: null
+			},
+			data: {
+				revokedAt: new Date(),
+			}
+		})
 	});
 
 	res.status(200).json({ message: "Password reset successfully" });
@@ -357,8 +370,8 @@ router.delete("/me", authMiddleware, async (req, res) => {
 
 	res.clearCookie("refreshToken", {
 		httpOnly: true,
-		secure: process.env.NODE_ENV === "production",
-		sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+		secure: env.NODE_ENV === "production",
+		sameSite: env.NODE_ENV === "production" ? "none" : "strict",
 	});
 
 	res.status(200).json({ message: "Account deleted" });

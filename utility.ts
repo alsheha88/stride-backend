@@ -1,12 +1,11 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import "dotenv/config";
 import { UnauthorizedError } from "./src/errors/index.js";
 import crypto from "crypto";
-
+import { env } from "./src/lib/env.js";
 
 export async function hashPassword(password: string): Promise<string> {
-	const saltRounds = Number(process.env.SALT_ROUNDS) || 10;
+	const saltRounds = Number(env.SALT_ROUNDS);
 
 	const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -25,36 +24,28 @@ export type AccessTokenPayload = {
 };
 
 export function signAccessToken(payload: AccessTokenPayload) {
-	const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
-
-	if (!accessTokenSecret) {
-		throw new Error("ACCESS_TOKEN_SECRET is not defined");
-	}
-	const accessToken = jwt.sign(payload, accessTokenSecret, {
+	const accessToken = jwt.sign(payload, env.ACCESS_TOKEN_SECRET, {
 		expiresIn: "15m",
 	});
-
 	return accessToken;
 }
 
-export function verifyAccessToken(token: string):AccessTokenPayload {
-	const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
+export function verifyAccessToken(token: string): AccessTokenPayload {
+	const accessTokenSecret = env.ACCESS_TOKEN_SECRET;
 	if (!accessTokenSecret) {
 		throw new Error("ACCESS_TOKEN_SECRET is not defined");
 	}
 	try {
-		return jwt.verify(token, accessTokenSecret) as AccessTokenPayload
+		return jwt.verify(token, accessTokenSecret) as AccessTokenPayload;
 	} catch (_err) {
-		  throw new UnauthorizedError("Invalid or expired token")
+		throw new UnauthorizedError("Invalid or expired token");
 	}
 }
 
-
-
 export function generateRawToken(): string {
-  return crypto.randomBytes(32).toString("hex");
+	return crypto.randomBytes(32).toString("hex");
 }
 
 export function hashToken(rawToken: string): string {
-  return crypto.createHash("sha256").update(rawToken).digest("hex");
+	return crypto.createHash("sha256").update(rawToken).digest("hex");
 }

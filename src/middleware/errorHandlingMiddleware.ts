@@ -7,6 +7,7 @@ import {
 	ForbiddenError,
 	UnauthorizedError,
 } from "../errors/index.js";
+import { logger } from "../lib/logger.js";
 
 export function ErrorHandler(
 	err: Error,
@@ -29,7 +30,7 @@ export function ErrorHandler(
 		return;
 	}
 
-	console.error(err);
+	logger.error(err);
 	res.status(500).json({
 		error: { code: "INTERNAL_ERROR", message: "Something went wrong" },
 	});

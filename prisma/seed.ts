@@ -2,6 +2,7 @@ import data from "./seed-data.json" with { type: "json" };
 import { prisma } from "./lib/prisma.js";
 import { hashPassword } from "../utility.js";
 import type { ProjectStatus } from "../generated/prisma/enums.js";
+import { logger } from "../src/lib/logger.js";
 
 async function main() {
 	const seedUserPassword = await hashPassword("password123");
@@ -10,7 +11,7 @@ async function main() {
 	if (!userData) throw new Error("Seed data must contain at least one user");
 
 	await prisma.user.deleteMany();
-	console.log("✓ Cleared existing data");
+	logger.info("✓ Cleared existing data");
 
 	await prisma.user.create({
 		data: {
@@ -21,7 +22,7 @@ async function main() {
 			emailVerifiedAt: userData.emailVerifiedAt,
 		},
 	});
-	console.log(`✓ Created user: ${userData.email}`);
+	logger.info(`✓ Created user: ${userData.email}`);
 
 	const concepts = data.concepts.map((concept) => ({
 		id: concept.id,
@@ -32,7 +33,7 @@ async function main() {
 	await prisma.concept.createMany({
 		data: concepts,
 	});
-	console.log(`✓ Inserted ${concepts.length} concepts`);
+	logger.info(`✓ Inserted ${concepts.length} concepts`);
 	const projects = data.projects.map((project) => ({
 		id: project.id,
 		name: project.name,
@@ -47,7 +48,7 @@ async function main() {
 	await prisma.project.createMany({
 		data: projects,
 	});
-	console.log(`✓ Inserted ${projects.length} projects`);
+	logger.info(`✓ Inserted ${projects.length} projects`);
 
 	const projectConcepts = data.projectConcepts.map((item) => ({
 		projectId: item.projectId,
@@ -57,7 +58,7 @@ async function main() {
 	await prisma.projectConcept.createMany({
 		data: projectConcepts,
 	});
-	console.log(`✓ Inserted ${projectConcepts.length} project-concept links`);
+	logger.info(`✓ Inserted ${projectConcepts.length} project-concept links`);
 
 	const conceptRatings = data.conceptRatings.map((item) => ({
 		id: item.id,
@@ -68,7 +69,7 @@ async function main() {
 	await prisma.conceptRating.createMany({
 		data: conceptRatings,
 	});
-	console.log(`✓ Inserted ${conceptRatings.length} concept ratings`);
+	logger.info(`✓ Inserted ${conceptRatings.length} concept ratings`);
 
 	const conceptNotes = data.conceptNotes.map((item) => ({
 		id: item.id,
@@ -77,15 +78,15 @@ async function main() {
 		createdAt: new Date(item.createdAt),
 	}));
 	await prisma.conceptNote.createMany({ data: conceptNotes });
-	console.log(`✓ Inserted ${conceptNotes.length} concept notes`);
+	logger.info(`✓ Inserted ${conceptNotes.length} concept notes`);
 
-	console.log("\n✓ Seed complete");
+	logger.info("\n✓ Seed complete");
 }
 
 try {
 	await main();
 } catch (e) {
-	console.error(e);
+	logger.error({ err: e }, "Seed failed");
 	process.exit(1);
 } finally {
 	await prisma.$disconnect();
