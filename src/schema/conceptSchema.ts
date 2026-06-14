@@ -1,11 +1,15 @@
 import { z } from "zod";
 
+
+
 export const createConceptSchema = z.object({
 	name: z.string().min(1, "Name field cannot be empty"),
 	rating: z.coerce.number().int().min(1).max(5),
+	tagIds: z.array(z.uuid()).optional()
 });
 export const updateConceptSchema = z.object({
 	name: z.string().min(1, "Name field cannot be empty"),
+	tagIds: z.array(z.uuid()).optional()
 });
 
 export const idParamsSchema = z.string().uuid();

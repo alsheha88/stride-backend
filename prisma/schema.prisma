@@ -4,8 +4,7 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -25,12 +24,13 @@ model User {
   sessions                Session[]
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
+  tags                    Tag[]
 }
 
 model Session {
   id        String    @id @default(uuid()) @db.Uuid
   userId    String    @db.Uuid
-  tokenHash String    
+  tokenHash String
   expiresAt DateTime
   createdAt DateTime  @default(now())
   revokedAt DateTime?
@@ -66,7 +66,8 @@ model Concept {
   userId       String           @db.Uuid
   ratings      ConceptRating[]
   projectLinks ProjectConcept[]
-  notes ConceptNote[]
+  notes        ConceptNote[]
+  conceptTags  ConceptTag[]
 
   @@unique([userId, name])
 }
@@ -77,6 +78,30 @@ model ConceptRating {
   createdAt DateTime @default(now())
   concept   Concept  @relation(fields: [conceptId], references: [id], onDelete: Cascade)
   conceptId String   @db.Uuid
+  projectId String?  @db.Uuid
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+}
+
+model Tag {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @db.Uuid
+  name        String
+  color       String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime?    @updatedAt
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conceptTags ConceptTag[]
+
+  @@unique([userId, name])
+}
+
+model ConceptTag {
+  conceptId String  @db.Uuid()
+  tagId     String  @db.Uuid()
+  concept   Concept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([conceptId, tagId])
 }
 
 model Project {
@@ -92,6 +117,7 @@ model Project {
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String           @db.Uuid
   conceptLinks   ProjectConcept[]
+  conceptRatings ConceptRating[]
 }
 
 model ProjectConcept {

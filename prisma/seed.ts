@@ -1,7 +1,7 @@
 import data from "./seed-data.json" with { type: "json" };
 import { prisma } from "./lib/prisma.js";
 import { hashPassword } from "../utility.js";
-import type { ProjectStatus } from "../generated/prisma/enums.js";
+import type { ProjectStatus } from "@prisma/client";
 import { logger } from "../src/lib/logger.js";
 
 async function main() {
@@ -79,6 +79,27 @@ async function main() {
 	}));
 	await prisma.conceptNote.createMany({ data: conceptNotes });
 	logger.info(`✓ Inserted ${conceptNotes.length} concept notes`);
+
+	const tags = data.tags.map((tag) => ({
+		id: tag.id,
+		name: tag.name,
+		color: tag.color,
+		createdAt: tag.createdAt,
+		userId: tag.userId
+	}))
+	await prisma.tag.createMany({
+		data: tags
+	})
+	logger.info(`✓ Inserted ${tags.length} tags`);
+	const conceptTags = data.conceptTags.map((tag) => ({
+		conceptId: tag.conceptId,
+		tagId: tag.tagId
+	}))
+	await prisma.conceptTag.createMany({
+		data: conceptTags
+	})
+
+	logger.info(`✓ Inserted ${conceptTags.length} concept tags`);
 
 	logger.info("\n✓ Seed complete");
 }
