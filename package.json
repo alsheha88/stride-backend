@@ -42,6 +42,7 @@
 	"main": "server.ts",
 	"scripts": {
 		"postinstall": "prisma generate",
+		"build": "tsc",
 		"start": "prisma migrate deploy && node dist/server.js",
 		"dev": "nodemon --exec tsx server.ts",
 		"seed": "tsx prisma/seed.ts"
