@@ -88,7 +88,6 @@ export const addConcept = async (req: Request, res: Response) => {
 			ratings: {
 				create: { rating: newConcept.data.rating },
 			},
-			
 		},
 		include: {
 			ratings: true,
@@ -151,7 +150,6 @@ export const editConcept = async (req: Request, res: Response) => {
 	const updateData: Record<string, unknown> = {
 		name: validateRequest.data.name,
 	};
-
 
 	const updatedConcept = await prisma.concept.update({
 		where: { id: idResult.data },
