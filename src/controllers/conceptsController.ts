@@ -24,11 +24,6 @@ export const getConcepts = async (req: Request, res: Response) => {
 				orderBy: { createdAt: "desc" },
 				take: 1,
 			},
-			conceptTags: {
-				include: {
-					tag: { select: { id: true, name: true, color: true } },
-				},
-			},
 		},
 		orderBy: {
 			createdAt: "desc",
@@ -56,11 +51,6 @@ export const getConcept = async (req: Request, res: Response) => {
 			},
 			notes: { orderBy: { createdAt: "asc" } },
 			projectLinks: { include: { project: true } },
-			conceptTags: {
-				include: {
-					tag: { select: { id: true, name: true, color: true } },
-				},
-			},
 		},
 	});
 
@@ -91,18 +81,6 @@ export const addConcept = async (req: Request, res: Response) => {
 	if (existingConcept)
 		throw new ConflictError("You already have a concept with this name");
 
-	const tagIds = newConcept.data.tagIds ?? [];
-	if (tagIds.length > 0) {
-		const ownedTags = await prisma.tag.findMany({
-			where: { userId, id: { in: tagIds } },
-			select: { id: true },
-		});
-
-		if (ownedTags.length !== tagIds.length) {
-			throw new ValidationError("One or more tags not found", []);
-		}
-	}
-
 	const concept = await prisma.concept.create({
 		data: {
 			name: newConcept.data.name,
@@ -110,17 +88,10 @@ export const addConcept = async (req: Request, res: Response) => {
 			ratings: {
 				create: { rating: newConcept.data.rating },
 			},
-			conceptTags: {
-				create: tagIds.map((tagId) => ({ tagId })),
-			},
+			
 		},
 		include: {
 			ratings: true,
-			conceptTags: {
-				include: {
-					tag: { select: { id: true, name: true, color: true } },
-				},
-			},
 		},
 	});
 
@@ -169,17 +140,6 @@ export const editConcept = async (req: Request, res: Response) => {
 	});
 	if (!existingConcept) throw new NotFoundError("Concept not found");
 
-	if (validateRequest.data.tagIds && validateRequest.data.tagIds.length > 0) {
-		const ownedTags = await prisma.tag.findMany({
-			where: { userId, id: { in: validateRequest.data.tagIds } },
-			select: { id: true },
-		});
-
-		if (ownedTags.length !== validateRequest.data.tagIds.length) {
-			throw new ValidationError("One or more tags not found", []);
-		}
-	}
-
 	if (validateRequest.data.name !== existingConcept.name) {
 		const duplicate = await prisma.concept.findUnique({
 			where: { userId_name: { userId, name: validateRequest.data.name } },
@@ -192,23 +152,10 @@ export const editConcept = async (req: Request, res: Response) => {
 		name: validateRequest.data.name,
 	};
 
-	if (validateRequest.data.tagIds !== undefined) {
-		updateData.conceptTags = {
-			deleteMany: {},
-			create: validateRequest.data.tagIds.map((tagId) => ({ tagId })),
-		};
-	}
 
 	const updatedConcept = await prisma.concept.update({
 		where: { id: idResult.data },
 		data: updateData,
-		include: {
-			conceptTags: {
-				include: {
-					tag: { select: { id: true, name: true, color: true } },
-				},
-			},
-		},
 	});
 
 	res.status(200).json({ data: { concept: updatedConcept } });

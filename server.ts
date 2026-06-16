@@ -5,7 +5,6 @@ import authRouter from "./src/routes/auth.routes.js";
 import dashboardRouter from "./src/routes/dashboard.routes.js";
 import conceptsRouter from "./src/routes/concepts.routes.js";
 import projectsRouter from "./src/routes/projects.routes.js";
-import tagsRouter from './src/routes/tags.routes.js'
 import cookieParser from "cookie-parser";
 import { ErrorHandler } from "./src/middleware/errorHandlingMiddleware.js";
 import cors from "cors";
@@ -36,7 +35,6 @@ app.use("/auth", authRouter);
 app.use("/dashboard", dashboardRouter);
 app.use("/concepts", conceptsRouter);
 app.use("/projects", projectsRouter);
-app.use("/tags", tagsRouter);
 
 Sentry.setupExpressErrorHandler(app);
 
