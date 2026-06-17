@@ -72,34 +72,12 @@ async function main() {
 	logger.info(`✓ Inserted ${conceptRatings.length} concept ratings`);
 
 	const conceptNotes = data.conceptNotes.map((item) => ({
-		id: item.id,
 		content: item.content,
 		conceptId: item.conceptId,
 		createdAt: new Date(item.createdAt),
 	}));
 	await prisma.conceptNote.createMany({ data: conceptNotes });
 	logger.info(`✓ Inserted ${conceptNotes.length} concept notes`);
-
-	const tags = data.tags.map((tag) => ({
-		id: tag.id,
-		name: tag.name,
-		color: tag.color,
-		createdAt: tag.createdAt,
-		userId: tag.userId
-	}))
-	await prisma.tag.createMany({
-		data: tags
-	})
-	logger.info(`✓ Inserted ${tags.length} tags`);
-	const conceptTags = data.conceptTags.map((tag) => ({
-		conceptId: tag.conceptId,
-		tagId: tag.tagId
-	}))
-	await prisma.conceptTag.createMany({
-		data: conceptTags
-	})
-
-	logger.info(`✓ Inserted ${conceptTags.length} concept tags`);
 
 	logger.info("\n✓ Seed complete");
 }

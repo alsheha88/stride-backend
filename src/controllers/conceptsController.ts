@@ -8,6 +8,7 @@ import {
 import {
 	createConceptNoteSchema,
 	createConceptSchema,
+	editConceptNoteSchema,
 	idParamsSchema,
 	updateConceptSchema,
 } from "../schema/conceptSchema.js";
@@ -158,6 +159,57 @@ export const editConcept = async (req: Request, res: Response) => {
 
 	res.status(200).json({ data: { concept: updatedConcept } });
 };
+
+export const editConceptNote = async (req: Request, res: Response) => {
+	console.log("params.id:", req.params.id);
+	console.log("params.noteId:", req.params.noteId);
+	console.log("body:", req.body);
+	const userId = req.user!.id;
+	const conceptId = idParamsSchema.safeParse(req.params.id);
+	const noteId = idParamsSchema.safeParse(req.params.noteId);
+	if (!conceptId.success) {
+		console.log("conceptId failed:", conceptId.error.issues);
+		throw new ValidationError("Invalid concept ID", conceptId.error.issues);
+	}
+	if (!noteId.success) {
+		console.log("noteId failed:", noteId.error.issues);
+		throw new ValidationError("Invalid note ID", noteId.error.issues);
+	}
+	const validateRequest = editConceptNoteSchema.safeParse(req.body);
+	if (!validateRequest.success) {
+		console.log("body failed:", validateRequest.error.issues);
+		throw new ValidationError(
+			"Failed to validate concept notes data",
+			validateRequest.error.issues,
+		);
+	}
+	const concept = await prisma.concept.findFirst({
+		where: {
+			userId,
+			id: conceptId.data,
+			notes: {
+				some: {
+					id: noteId.data,
+				},
+			},
+		},
+	});
+
+	if (!concept) throw new NotFoundError("Note not found");
+
+	const updatedNote = await prisma.conceptNote.update({
+		where: {
+			id: noteId.data,
+			conceptId: conceptId.data,
+		},
+		data: {
+			content: validateRequest.data.note,
+		},
+	});
+
+	res.status(200).json({ data: { note: updatedNote } });
+};
+
 export const deleteConcept = async (req: Request, res: Response) => {
 	const userId = req.user!.id;
 	const idResult = idParamsSchema.safeParse(req.params.id);
@@ -172,6 +224,37 @@ export const deleteConcept = async (req: Request, res: Response) => {
 	await prisma.concept.delete({
 		where: {
 			id: idResult.data,
+		},
+	});
+
+	res.status(204).send();
+};
+
+export const deleteConceptNote = async (req: Request, res: Response) => {
+	const userId = req.user!.id;
+	const conceptId = idParamsSchema.safeParse(req.params.id);
+	const noteId = idParamsSchema.safeParse(req.params.noteId);
+	if (!conceptId.success)
+		throw new ValidationError("Invalid concept ID", conceptId.error.issues);
+	if (!noteId.success)
+		throw new ValidationError("Invalid note ID", noteId.error.issues);
+	const concept = await prisma.concept.findFirst({
+		where: {
+			userId,
+			id: conceptId.data,
+			notes: {
+				some: {
+					id: noteId.data,
+				},
+			},
+		},
+	});
+
+	if (!concept) throw new NotFoundError("Note not found");
+
+	await prisma.conceptNote.delete({
+		where: {
+			id: noteId.data,
 		},
 	});
 

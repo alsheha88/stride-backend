@@ -5,6 +5,8 @@ import {
 	completeProject,
 	deleteProject,
 	editProject,
+	editProjectLessons,
+	editProjectStatus,
 	getProject,
 	getProjects,
 } from "../controllers/projectsController.js";
@@ -18,6 +20,9 @@ router.get("/:id", getProject);
 router.post("/", addProject);
 
 router.post("/:id/complete", completeProject);
+router.patch("/:id/status", editProjectStatus);
+router.patch("/:id/lessons-learned", editProjectLessons);
+
 router.patch("/:id", editProject);
 router.delete("/:id", deleteProject);
 

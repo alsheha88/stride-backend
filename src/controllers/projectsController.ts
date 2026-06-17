@@ -9,7 +9,9 @@ import { idParamsSchema } from "../schema/conceptSchema.js";
 import {
 	completeProjectSchema,
 	createProjectSchema,
+	lessonsLearntSchema,
 	updateProjectSchema,
+	updateProjectStatusSchema,
 } from "../schema/projectsSchema.js";
 
 export const getProjects = async (req: Request, res: Response) => {
@@ -201,6 +203,37 @@ export const editProject = async (req: Request, res: Response) => {
 
 	res.status(200).json({ data: { project: updatedProject } });
 };
+export const editProjectStatus = async (req: Request, res: Response) => {
+	const userId = req.user!.id;
+	const idResult = idParamsSchema.safeParse(req.params.id);
+	if (!idResult.success)
+		throw new ValidationError("Invalid Project ID", idResult.error.issues);
+	const validateRequest = updateProjectStatusSchema.safeParse(req.body);
+	if (!validateRequest.success)
+		throw new ValidationError(
+			"Failed to validate project status data",
+			validateRequest.error.issues,
+		);
+
+	const existingProject = await prisma.project.findFirst({
+		where: { id: idResult.data, userId },
+	});
+	if (!existingProject) throw new NotFoundError("Project not found");
+
+	if (existingProject.status === "COMPLETED") {
+		throw new ValidationError(
+			"Cannot change status of a completed project",
+			[],
+		);
+	}
+
+	const updateProjectStatus = await prisma.project.update({
+		where: { id: idResult.data },
+		data: { status: validateRequest.data?.status },
+	});
+
+	res.status(200).json({ data: { project: updateProjectStatus } });
+};
 export const completeProject = async (req: Request, res: Response) => {
 	const userId = req.user!.id;
 	const idResult = idParamsSchema.safeParse(req.params.id);
@@ -309,6 +342,38 @@ export const completeProject = async (req: Request, res: Response) => {
 	});
 
 	res.status(200).json({ data: { project: completeProject } });
+};
+
+export const editProjectLessons = async (req: Request, res: Response) => {
+	const userId = req.user!.id;
+
+	const idResult = idParamsSchema.safeParse(req.params.id);
+	if (!idResult.success)
+		throw new ValidationError("Invalid Project ID", idResult.error.issues);
+	const validateRequest = lessonsLearntSchema.safeParse(req.body);
+
+	if (!validateRequest.success)
+		throw new ValidationError(
+			"Failed to validate lessons learnt data",
+			validateRequest.error.issues,
+		);
+
+	const existingProject = await prisma.project.findFirst({
+		where: {
+			id: idResult.data,
+			userId,
+		},
+	});
+	if (!existingProject) throw new NotFoundError("Project not found");
+
+	const updateLessonsLearnt = await prisma.project.update({
+		where: { id: idResult.data, userId },
+		data: {
+			lessonsLearned: validateRequest.data.lessonsLearned,
+		},
+	});
+
+	res.status(200).json({ data: { lessonsLearn: updateLessonsLearnt } });
 };
 export const deleteProject = async (req: Request, res: Response) => {
 	const userId = req.user!.id;
